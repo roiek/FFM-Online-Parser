@@ -13,13 +13,11 @@
 package com.ffm.parser.fileparser;
 
 import static java.nio.file.Files.createTempFile;
-import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 import org.junit.After;
 import org.junit.Before;
@@ -42,10 +40,18 @@ public class PrnFileParserTest {
 	public void shouldTest() throws IOException {
 
 		//given
+		//given
 		var data = "Name            Address               Postcode Phone         Credit Limit Birthday\n"
 				 + "Johnson, John   Voorstraat 32         3122gg   020 3849381        1000000 19870101\n"
 				 + "Anderson, Paul  Dorpsplein 3A         4532 AA  030 3458986       10909300 19651203";
 
+		tempFilePath = createTempFile("test", ".csv");
+		Files.write(tempFilePath, data.getBytes());
+
+		//when
+		var result = prnFileParser.parse(tempFilePath.toFile(), Charset.forName("windows-1252"));
+		System.out.println(result);
+		/*
 		tempFilePath = createTempFile("test", ".prn");
 		Files.write(tempFilePath, data.getBytes());
 
@@ -57,7 +63,7 @@ public class PrnFileParserTest {
 		assertThat(result.getDataRows()).containsExactly(
 			new Row(List.of("Johnson, John","Voorstraat 32","3122gg","020 3849381","10000","01/01/1987")),
 			new Row(List.of("Anderson, Paul","Dorpsplein 3A","4532 AA","030 3458986","109093","03/12/1965"))
-		);
+		);*/
 	}
 
 	@After
