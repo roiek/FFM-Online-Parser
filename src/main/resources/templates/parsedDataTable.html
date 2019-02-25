@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+	<meta name="charset" data-th-attr="charset=${charset}" />
+</head>
+<body>
+	<table>
+		<tr>
+			<th:block th:each="columnHeader : ${headerRow.data}">
+				<th th:text="${columnHeader}"></th>
+			</th:block>
+		</tr>
+		<tr th:each="row : ${dataRows}">
+			<th:block th:each = "columnData : ${row.data}">
+				<td th:text="${columnData}"></td>
+			</th:block>
+		</tr>
+	</table>
+</body>
+</html>
