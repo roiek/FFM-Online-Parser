@@ -50,7 +50,7 @@ public class CsvFileParser implements FileParsingStrategy {
 		final var header = parseHeader(csvData);
 		final var records = parseRecords(csvData, header);
 
-		return new ParsedFileResponseDto(header, records);
+		return new ParsedFileResponseDto(header, records, charset);
 	}
 
 	private Row parseHeader(CSVParser csvParser) {

@@ -12,6 +12,8 @@
 
 package com.ffm.parser.fileparser;
 
+import static org.apache.commons.io.FileUtils.deleteQuietly;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -57,6 +59,9 @@ public class FileParser implements SupportedExtensionsProvider {
 
 		final var charset = charsetDetector.detect(file);
 
-		return fileParsingStrategy.parse(file, charset);
+		final ParsedFileResponseDto response = fileParsingStrategy.parse(file, charset);
+		deleteQuietly(file);
+
+		return response;
 	}
 }

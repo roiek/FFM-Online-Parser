@@ -12,19 +12,22 @@
 
 package com.ffm.parser.fileparser;
 
+import java.util.StringJoiner;
+import java.util.stream.Stream;
+
 import org.springframework.util.Assert;
 
 
-class PotentialHeader {
+class ColumnHeader {
 
 	private final int startIndex;
 	private final int endIndex;
 	private final String value;
 
-	public PotentialHeader(int startIndex, int endIndex, String value) {
+	ColumnHeader(int startIndex, int endIndex, String value) {
 
-		Assert.state(startIndex < endIndex, "startIndex must be smaller then endIndex");
-		Assert.hasText(value, "value must have text");
+		Assert.state(startIndex < endIndex, String.format("startIndex must be smaller then endIndex, got startIndex: %s endIndex: %s", startIndex, endIndex));
+		Assert.hasText(value, "value must not be null or empty");
 
 		this.startIndex = startIndex;
 		this.endIndex = endIndex;
@@ -39,5 +42,33 @@ class PotentialHeader {
 	String getValue() {
 
 		return value;
+	}
+
+	int getStartIndex() {
+
+		return startIndex;
+	}
+
+	int getEndIndex() {
+
+		return endIndex;
+	}
+
+	Stream<ColumnHeader> splitAt(int index) {
+
+		return Stream.of(
+			new ColumnHeader(startIndex, startIndex + index, value.substring(0, index).trim()),
+			new ColumnHeader(startIndex + index, endIndex, value.substring(index).trim())
+		);
+	}
+
+	@Override
+	public String toString() {
+
+		return new StringJoiner(", ", ColumnHeader.class.getSimpleName() + "[", "]")
+			.add("startIndex=" + startIndex)
+			.add("endIndex=" + endIndex)
+			.add("value='" + value + "'")
+			.toString();
 	}
 }

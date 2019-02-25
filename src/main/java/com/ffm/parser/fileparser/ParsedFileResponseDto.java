@@ -15,6 +15,7 @@ package com.ffm.parser.fileparser;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.util.CollectionUtils.isEmpty;
 
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.function.Predicate;
@@ -26,15 +27,18 @@ public class ParsedFileResponseDto {
 
 	private final Row headerRow;
 	private final List<Row> dataRows;
+	private final Charset charset;
 
-	public ParsedFileResponseDto(Row headerRow, List<Row> dataRows) {
+	ParsedFileResponseDto(Row headerRow, List<Row> dataRows, Charset charset) {
 
 		Assert.notNull(headerRow, "headerRow must not be null");
 		Assert.notNull(dataRows, "dataRows must not be null");
+		Assert.notNull(charset, "charset must not be null");
 		assertDataRows(headerRow, dataRows);
 
 		this.headerRow = headerRow;
 		this.dataRows = dataRows;
+		this.charset = charset;
 	}
 
 	private void assertDataRows(Row headerRow, List<Row> dataRows) {
@@ -59,6 +63,11 @@ public class ParsedFileResponseDto {
 	public List<Row> getDataRows() {
 
 		return dataRows;
+	}
+
+	public Charset getCharset() {
+
+		return charset;
 	}
 
 	@Override

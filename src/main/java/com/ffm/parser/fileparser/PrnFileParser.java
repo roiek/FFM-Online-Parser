@@ -12,29 +12,36 @@
 
 package com.ffm.parser.fileparser;
 
+import static java.lang.Math.min;
+import static java.util.regex.Pattern.compile;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.range;
+import static org.apache.commons.io.FileUtils.readLines;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 
 
 @Service
 public class PrnFileParser implements FileParsingStrategy {
 
 	private static final String PRN_EXTENSION = "prn";
+	public static final String TWO_OR_MORE_WHITESPACES_REGEXP = "[A-Za-z]*\\s{2,}";
+	public static final Pattern TWO_OR_MORE_WHITESPACES_PATTERN = compile(TWO_OR_MORE_WHITESPACES_REGEXP);
+	public static final Pattern ONE_WHITESPACE_PATTERN = compile("\\s");
 
 	@Override
 	public String supportedExtension() {
+
 
 		return PRN_EXTENSION;
 	}
@@ -42,64 +49,82 @@ public class PrnFileParser implements FileParsingStrategy {
 	@Override
 	public ParsedFileResponseDto parse(File file, Charset charset) throws IOException {
 
-		final List<String> lines = FileUtils.readLines(file, charset);
+		final List<String> lines = readLines(file, charset);
 
-		final var header = parseHeader(lines);
+		final var columnHeaders = parseHeader(lines);
+		final var headerRow = new Row(columnHeaders.stream().map(ColumnHeader::getValue).collect(toList()));
+		final var records = parseRecords(lines, columnHeaders);
 
-		return new ParsedFileResponseDto(header, Collections.emptyList());
+		return new ParsedFileResponseDto(headerRow, records, charset);
 	}
 
-	private Row parseHeader(List<String> lines) {
+	private List<ColumnHeader> parseHeader(List<String> lines) {
 
-		var data = lines.get(0);
+		var headerLine = lines.get(0);
 
-		var list = new ArrayList<String>();
+		var potentialHeaders = findPotentialHeaders(headerLine);
 
-		List<Integer> starts = new ArrayList<>();
-		starts.add(0);
-		List<Integer> ends = new ArrayList<>();
+		return potentialHeaders.stream()
+			.flatMap(potentialHeaderColumn -> trySplit(potentialHeaderColumn, lines))
+			.collect(toList());
+	}
 
-		final Matcher matcher = Pattern.compile("\\s{2,}").matcher(data);
+	private List<Row> parseRecords(List<String> lines, List<ColumnHeader> headerRow) {
+
+		return lines.stream()
+			.skip(1)
+			.map(parseSingleRecord(headerRow))
+			.collect(toList());
+	}
+
+	private Function<String, Row> parseSingleRecord(List<ColumnHeader> headerRow) {
+
+		return line -> new Row(headerRow.stream()
+			.map(header -> line.substring(header.getStartIndex(), findDataRowEndIndex(header, line.length())))
+			.map(String::trim)
+			.collect(toList())
+		);
+	}
+
+	private int findDataRowEndIndex(ColumnHeader header, int rowLength) {
+
+		return min(header.getEndIndex(), rowLength);
+	}
+
+	private List<ColumnHeader> findPotentialHeaders(String data) {
+
+		final List<Integer> indexes = new ArrayList<>();
+		final var matcher = TWO_OR_MORE_WHITESPACES_PATTERN.matcher(data);
+
+		indexes.add(0);
 		while (matcher.find()) {
-			starts.add(matcher.start());
-			ends.add(matcher.end());
+			indexes.add(matcher.end());
 		}
-		ends.add(data.length());
+		indexes.add(data.length());
 
-		Assert.state(starts.size() == ends.size());
-
-		for (int i =0; i < starts.size(); i++) {
-			list.add(data.substring(starts.get(i), ends.get(i)).trim());
-		}
-
-		final List<String> collect = list.stream().flatMap(potentialHeaderColumn -> trySplit(potentialHeaderColumn, lines))
-			.collect(Collectors.toList());
-
-		return new Row(collect);
+		return range(1, indexes.size())
+			.mapToObj(i -> new ColumnHeader(indexes.get(i-1), indexes.get(i), data.substring(indexes.get(i-1), indexes.get(i)).trim()))
+			.collect(toList());
 	}
 
-	private Stream<String> trySplit(String potentialHeaderColumn, List<String> lines) {
+	private Stream<ColumnHeader> trySplit(ColumnHeader potentialHeader, List<String> lines) {
 
-		if (potentialHeaderColumn.contains(" ")) {
+		if (potentialHeader.containsWhitespace()) {
 
-			final Matcher matcher1 = Pattern.compile(potentialHeaderColumn).matcher(lines.get(0));
-			final int start = matcher1.find()?matcher1.start() : 0;
-			final var matcher = Pattern.compile("\\s").matcher(potentialHeaderColumn);
+			final Matcher matcher1 = compile(potentialHeader.getValue()).matcher(lines.get(0));
+			final int start = matcher1.find() ? matcher1.start() : 0;
+
+			final var matcher = ONE_WHITESPACE_PATTERN.matcher(potentialHeader.getValue());
 			while (matcher.find()) {
 
 				if (lines.stream().allMatch(line -> line.charAt(start + matcher.start()) == ' ')) {
 
-					return Stream.of(
-						potentialHeaderColumn.substring(0, matcher.start()).trim(),
-						potentialHeaderColumn.substring(matcher.start()).trim()
-						);
+					return potentialHeader.splitAt(matcher.start())
+						.flatMap(splitHeader -> trySplit(splitHeader, lines));
 				}
 			}
-			return Stream.of(potentialHeaderColumn);
-
-		} else {
-
-			return Stream.of(potentialHeaderColumn);
 		}
+
+		return Stream.of(potentialHeader);
 	}
 }
