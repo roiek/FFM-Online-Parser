@@ -10,7 +10,7 @@
  * i w zgodzie z warunkami umowy licencyjnej zawartej z Unity S.A.
  */
 
-package com.ffm.parser.fileparser;
+package com.ffm.parser.logic.fileparser;
 
 import java.util.List;
 
@@ -18,4 +18,8 @@ import java.util.List;
 public interface SupportedExtensionsProvider {
 
 	List<String> supportedExtensions();
+	default String supportedExtensionsText() {
+
+		return String.join(", ", supportedExtensions());
+	}
 }

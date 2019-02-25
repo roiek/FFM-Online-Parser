@@ -10,7 +10,7 @@
  * i w zgodzie z warunkami umowy licencyjnej zawartej z Unity S.A.
  */
 
-package com.ffm.parser.fileparser;
+package com.ffm.parser.logic.fileparser;
 
 import static java.nio.file.Files.createTempFile;
 import static java.nio.file.Files.write;

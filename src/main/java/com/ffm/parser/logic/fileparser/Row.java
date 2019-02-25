@@ -10,7 +10,7 @@
  * i w zgodzie z warunkami umowy licencyjnej zawartej z Unity S.A.
  */
 
-package com.ffm.parser.fileparser;
+package com.ffm.parser.logic.fileparser;
 
 import java.util.List;
 import java.util.StringJoiner;

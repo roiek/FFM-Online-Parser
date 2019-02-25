@@ -10,7 +10,7 @@
  * i w zgodzie z warunkami umowy licencyjnej zawartej z Unity S.A.
  */
 
-package com.ffm.parser;
+package com.ffm.parser.mvc;
 
 import static java.io.File.createTempFile;
 import static org.apache.commons.io.FileUtils.getTempDirectoryPath;
@@ -28,22 +28,27 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.ffm.parser.fileparser.FileParser;
-import com.ffm.parser.fileparser.ParsedFileResponseDto;
+import com.ffm.parser.logic.fileparser.FileParser;
+import com.ffm.parser.logic.fileparser.ParsedFileResponseDto;
 
 
 @Controller
 @RequestMapping("/")
 public class MainPageController {
 
+	public static final String P_FILE = "file";
+
 	private final FileParser fileParser;
+	private final ParseFileUploadedFileValidator validator;
 
 	@Autowired
-	MainPageController(FileParser fileParser) {
+	private MainPageController(FileParser fileParser, ParseFileUploadedFileValidator validator) {
 
 		Assert.notNull(fileParser, "fileParser must not be null");
+		Assert.notNull(validator, "validator must not be null");
 
 		this.fileParser = fileParser;
+		this.validator = validator;
 	}
 
 	@GetMapping
@@ -53,11 +58,18 @@ public class MainPageController {
 	}
 
 	@PostMapping
-	private String parseFile(@RequestParam(name = "qqfile") MultipartFile file, Model model) throws IOException {
+	private String parseFile(@RequestParam(name = P_FILE) MultipartFile file, Model model) throws IOException {
 
-		File temp = createTempFile(getTempDirectoryPath(), file.getOriginalFilename());
-		file.transferTo(temp);
-		final ParsedFileResponseDto parsedFile = fileParser.parse(temp);
+		var validationResult = validator.validate(file);
+
+		if (validationResult.hasErrors()) {
+
+			model.addAttribute("errors", validationResult.getErrors());
+
+			return "parsedDataTable-error.html";
+		}
+
+		final ParsedFileResponseDto parsedFile = parseFile(file);
 
 		model.addAttribute("headerRow", parsedFile.getHeaderRow());
 		model.addAttribute("dataRows", parsedFile.getDataRows());
@@ -65,4 +77,13 @@ public class MainPageController {
 
 		return "parsedDataTable.html";
 	}
+
+	private ParsedFileResponseDto parseFile(@RequestParam(name = P_FILE) MultipartFile file) throws IOException {
+
+		File temp = createTempFile(getTempDirectoryPath(), file.getOriginalFilename());
+		file.transferTo(temp);
+
+		return fileParser.parse(temp);
+	}
+
 }
