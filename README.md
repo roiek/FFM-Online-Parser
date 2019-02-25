@@ -1,3 +1,4 @@
+# To run the application follow these steps: 
 * git clone https://github.com/roiek/FFM-Online-Parser.git
 * cd FFM-Online-Parser
 * ./gradlew bootRun
