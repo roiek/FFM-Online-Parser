@@ -4,10 +4,10 @@
 	<meta name="charset" data-th-attr="charset=${charset}" />
 </head>
 <body>
-	<table>
+	<table class="table">
 		<tr>
 			<th:block th:each="columnHeader : ${headerRow.data}">
-				<th th:text="${columnHeader}"></th>
+				<th scope="col" th:text="${columnHeader}"></th>
 			</th:block>
 		</tr>
 		<tr th:each="row : ${dataRows}">

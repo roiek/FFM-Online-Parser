@@ -2,7 +2,10 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <body>
 	<div>
-		<span th:each="error : ${errors}" th:text="${error}"/>
+		<h1>Failed to parse file due to:</h1>
+		<ul th:each="error : ${errors}">
+			<li th:text="${error}"/>
+		</ul>
 	</div>
 </body>
 </html>
